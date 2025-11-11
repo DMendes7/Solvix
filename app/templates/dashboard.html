@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOLVIX - Controle suas Finanças</title>
+    <meta name="description" content="Gerencie suas entradas, gastos e receba sugestões inteligentes para economizar">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <img src="{{ url_for('static', filename='img/icon-solvix.png') }}" alt="Logo Solvix">
+                    </div>
+                    <div>
+                        <h1>SOLVIX</h1> 
+                        <p class="subtitle">Controle suas finanças pessoais</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        <div class="summary-grid">
+            <div class="card summary-card income-card">
+                <div class="card-header">
+                    <h3>Entradas</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                </div>
+                <p class="amount income-amount" id="totalIncome">R$ 0,00</p>
+            </div>
+
+            <div class="card summary-card expense-card">
+                <div class="card-header">
+                    <h3>Gastos</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </div>
+                <p class="amount expense-amount" id="totalExpenses">R$ 0,00</p>
+            </div>
+
+            <div class="card summary-card credit-card">
+                <div class="card-header">
+                    <h3>Fatura do Cartão</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                    </svg>
+                </div>
+                <p class="amount credit-amount" id="creditCardBill">R$ 0,00</p>
+            </div>
+
+            <div class="card summary-card balance-card">
+                <div class="card-header">
+                    <h3>Saldo Disponível</h3>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                </div>
+                <p class="amount balance-amount" id="balance">R$ 0,00</p>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="left-column">
+                <div class="card">
+                    <h2 class="card-title">Adicionar Transação</h2>
+                    <form id="transactionForm">
+                        <div class="form-group">
+                            <label>Tipo</label>
+                            <div class="button-group">
+                                <button type="button" class="btn-toggle" data-type="income" id="incomeBtn">Entrada</button>
+                                <button type="button" class="btn-toggle active" data-type="expense" id="expenseBtn">Gasto</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="amount">Valor (R$)</label>
+                            <input type="number" id="amount" step="0.01" placeholder="0,00" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Categoria</label>
+                            <select id="category" required></select>
+                        </div>
+
+                        <div class="form-group" id="paymentMethodGroup" style="display: block;">
+                            <label for="paymentMethod">Forma de Pagamento</label>
+                            <select id="paymentMethod">
+                                <option value="debit">Débito</option>
+                                <option value="credit">Crédito</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="subscriptionLogoGroup" style="display: none;">
+                            <label for="subscriptionLogo">Assinatura</label>
+                            <select id="subscriptionLogo"></select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Descrição</label>
+                            <input type="text" id="description" placeholder="Ex: Salário mensal, Netflix" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="date">Data</label>
+                            <input type="date" id="date" required>
+                        </div>
+
+                        <div class="form-group" id="recurringGroup" style="display: none;">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="isRecurring">
+                                <span>Assinatura Recorrente</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Adicionar Transação</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">Assinaturas Ativas</h2>
+                    <div id="subscriptionsList" class="subscriptions-list"></div>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <div class="card">
+                    <h2 class="card-title">Transações Recentes</h2>
+                    <div id="transactionsList" class="transactions-list"></div>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">Sugestões de Economia</h2>
+                    <div id="suggestionsList" class="suggestions-list"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
