@@ -1,6 +1,6 @@
 
 <p align="center">
-  <img src="static/img/solvix.png" width="240" alt="Solvix Logo"/>
+  <img src="app/static/img/solvix.png" width="240" alt="Solvix Logo"/>
 </p>
 
 # 💰 **Solvix - Controle Financeiro de Verdade. Simples. Poderoso. 100% Gratuito.**
