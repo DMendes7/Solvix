@@ -33,6 +33,7 @@ const SUBSCRIPTION_LOGOS = {
     "Crunchroll": "https://upload.wikimedia.org/wikipedia/commons/f/f6/Crunchyroll_Logo.svg",
     "SmartFit": "https://upload.wikimedia.org/wikipedia/commons/0/01/Smart_Fit_logo.svg",
     "Amazon Prime": "https://upload.wikimedia.org/wikipedia/commons/1/11/Amazon_Prime_Video_logo.svg",
+    "Microsoft": "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg",
     "Apple Music": "https://upload.wikimedia.org/wikipedia/commons/2/2a/Apple_Music_logo.svg",
     "GPT Plus": "https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg",
     "Adobe": "https://upload.wikimedia.org/wikipedia/commons/7/7b/Adobe_Systems_logo_and_wordmark.svg"
