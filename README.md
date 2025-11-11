@@ -38,7 +38,7 @@ Cores suaves, futuristas e profissionais, criando a experiência perfeita para a
 ### **1. Clone o repositório**
 
 ```bash
-git clone <seu-repositorio>
+git clone https://github.com/DMendes7/Solvix.git
 cd Solvix
 ```
 
@@ -49,6 +49,10 @@ cd Solvix
 ```bash
 pip install -r requirements.txt
 ```
+ou
+```bash
+python3 -m pip install --user -r requirements.txt
+```
 
 ---
 
@@ -56,6 +60,10 @@ pip install -r requirements.txt
 
 ```bash
 python app.py
+```
+ou
+```bash
+python3 app.py
 ```
 
 Acesse:
