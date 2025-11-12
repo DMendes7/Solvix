@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="app/static/img/icon-solvix.png" type="image/png">
-    <title>SOLVIX - Controle suas Finanças</title>
+    <link rel="icon" href="{{ url_for('static', filename='img/icon-solvix.png') }}" type="image/png">
+    <title>Solvix - Finanças</title>
     <meta name="description" content="Gerencie suas entradas, gastos e receba sugestões inteligentes para economizar">
     
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-
 </head>
 <body>
     <header class="header">
@@ -80,8 +79,19 @@
                         <div class="form-group">
                             <label>Tipo</label>
                             <div class="button-group">
-                                <button type="button" class="btn-toggle" data-type="income" id="incomeBtn">Entrada</button>
-                                <button type="button" class="btn-toggle active" data-type="expense" id="expenseBtn">Gasto</button>
+                                <button type="button" class="btn-toggle" data-type="income" id="incomeBtn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-income">
+                                        <polyline points="18 15 12 9 6 15"></polyline>
+                                    </svg>
+                                    Entrada
+                                </button>
+                                
+                                <button type="button" class="btn-toggle active" data-type="expense" id="expenseBtn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-expense">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                    Gasto
+                                </button>
                             </div>
                         </div>
 
