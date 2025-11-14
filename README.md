@@ -8,7 +8,7 @@ Você já tentou organizar suas finanças e só encontrou **aplicativos caros**,
 
 **Nós também.**
 
-Foi exatamente dessa frustração que nasceu o **Solvix** — um gestor financeiro bonito, rápido, minimalista, direto ao ponto e **completamente gratuito**.  
+Foi exatamente dessa frustração que nasceu o **Solvix**, um gestor financeiro bonito, rápido, minimalista, direto ao ponto e **completamente gratuito**.  
 Sem pegadinhas. Sem assinatura. Sem frescura. Apenas **controle total das suas finanças**.
 
 ---
@@ -112,5 +112,5 @@ Achou um bug? Quer sugerir algo? Envie uma **Issue** ou **Pull Request**.
 
 <p align="center">
   <b>Comece hoje mesmo a controlar seus gastos com estilo, praticidade e liberdade.</b><br/>
-  ✨ <i>Solvix — O controle financeiro que você sempre quis, sem pagar nada por isso.</i> ✨
+  ✨ <i>Solvix - O controle financeiro que você sempre quis, sem pagar nada por isso.</i> ✨
 </p>
