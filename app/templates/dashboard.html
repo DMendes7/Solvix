@@ -27,6 +27,7 @@
     </header>
 
     <main class="container main-content">
+        <!-- RESUMO SUPERIOR -->
         <div class="summary-grid">
             <div class="card summary-card income-card">
                 <div class="card-header">
@@ -71,11 +72,15 @@
             </div>
         </div>
 
+        <!-- GRID PRINCIPAL -->
         <div class="main-grid">
+            <!-- COLUNA ESQUERDA -->
             <div class="left-column">
+                <!-- FORMULÁRIO -->
                 <div class="card">
                     <h2 class="card-title">Adicionar Transação</h2>
                     <form id="transactionForm">
+                        <!-- Tipo -->
                         <div class="form-group">
                             <label>Tipo</label>
                             <div class="button-group">
@@ -95,16 +100,19 @@
                             </div>
                         </div>
 
+                        <!-- Valor -->
                         <div class="form-group">
                             <label for="amount">Valor (R$)</label>
                             <input type="number" id="amount" step="0.01" placeholder="0,00" required>
                         </div>
 
+                        <!-- Categoria -->
                         <div class="form-group">
                             <label for="category">Categoria</label>
                             <select id="category" required></select>
                         </div>
 
+                        <!-- Forma de Pagamento (apenas gastos que não são pagamento de fatura) -->
                         <div class="form-group" id="paymentMethodGroup" style="display: block;">
                             <label for="paymentMethod">Forma de Pagamento</label>
                             <select id="paymentMethod">
@@ -113,47 +121,94 @@
                             </select>
                         </div>
                         
+                        <!-- Assinatura / Logo -->
                         <div class="form-group" id="subscriptionLogoGroup" style="display: none;">
                             <label for="subscriptionLogo">Assinatura</label>
                             <select id="subscriptionLogo"></select>
                         </div>
 
+                        <!-- Parcelamento (apenas crédito, não assinatura) -->
+                        <div class="form-group" id="installmentGroup" style="display: none;">
+                            <label>Parcelar compra no crédito</label>
+                            
+                            <div class="installment-row">
+                                <div class="installment-field">
+                                    <label for="installmentCount">Qtd. de parcelas</label>
+                                    <input type="number" id="installmentCount" min="2" step="1" placeholder="Ex: 3">
+                                </div>
+                                <div class="installment-field">
+                                    <label for="installmentMode">Modo de cálculo</label>
+                                    <select id="installmentMode">
+                                        <option value="total" selected>Valor total da compra</option>
+                                        <option value="parcela">Valor de cada parcela</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="installment-row">
+                                <div class="installment-field">
+                                    <label for="interestPerMonth">Juros (% ao mês)</label>
+                                    <input type="number" id="interestPerMonth" min="0" step="0.01" placeholder="Opcional">
+                                </div>
+                            </div>
+
+                            <p class="helper-text">
+                                Se não informar parcelas, será compra à vista no crédito.
+                                Ao informar, o Solvix cria parcelas futuras automaticamente.
+                            </p>
+                        </div>
+
+                        <!-- Descrição -->
                         <div class="form-group">
                             <label for="description">Descrição</label>
                             <input type="text" id="description" placeholder="Ex: Salário mensal, Netflix" required>
                         </div>
 
+                        <!-- Data -->
                         <div class="form-group">
                             <label for="date">Data</label>
                             <input type="date" id="date" required>
                         </div>
 
+                        <!-- Recorrência (assinatura) -->
                         <div class="form-group" id="recurringGroup" style="display: none;">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="isRecurring">
+                            <label class="toggle-switch-label">
                                 <span>Assinatura Recorrente</span>
+                                <input type="checkbox" id="isRecurring" class="toggle-switch-input">
+                                <span class="toggle-switch-slider"></span>
                             </label>
                         </div>
 
+                        <!-- Botão -->
                         <button type="submit" class="btn btn-primary">Adicionar Transação</button>
                     </form>
                 </div>
 
+                <!-- Assinaturas Ativas -->
                 <div class="card">
                     <h2 class="card-title">Assinaturas Ativas</h2>
                     <div id="subscriptionsList" class="subscriptions-list"></div>
                 </div>
             </div>
 
+            <!-- COLUNA DIREITA -->
             <div class="right-column">
+                <!-- Transações Recentes -->
                 <div class="card">
                     <h2 class="card-title">Transações Recentes</h2>
                     <div id="transactionsList" class="transactions-list"></div>
                 </div>
 
+                <!-- Sugestões -->
                 <div class="card">
                     <h2 class="card-title">Sugestões de Economia</h2>
                     <div id="suggestionsList" class="suggestions-list"></div>
+                </div>
+
+                <!-- Parcelas Futuras -->
+                <div class="card">
+                    <h2 class="card-title">Parcelas Futuras</h2>
+                    <div id="futureInstallmentsList" class="future-installments-list"></div>
                 </div>
             </div>
         </div>
