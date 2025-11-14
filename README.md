@@ -1,102 +1,101 @@
+# 💰 Solvix: Seu Gestor Financeiro Pessoal, Simples e Gratuito
 
-<p align="center">
-  <img src="app/static/img/solvix.png" width="240" alt="Solvix Logo"/>
-</p>
-
-# 💰 **Solvix - Controle Financeiro de Verdade. Simples. Poderoso. 100% Gratuito.**
-
-Você já tentou organizar suas finanças e só encontrou **aplicativos caros**, cheios de propagandas, recursos inúteis, ou paywall para tudo?
-
-**Nós também.**
-
-Foi exatamente dessa frustração que nasceu o **Solvix** - um gestor financeiro bonito, rápido, minimalista, direto ao ponto e **completamente gratuito**.  
-Sem pegadinhas. Sem assinatura. Sem frescura. Apenas **controle total das suas finanças**.
+> Controle suas finanças pessoais sem mensalidade, sem anúncios e sem complicação.
 
 ---
 
-# ✨ **Por que usar o Solvix?**
+## 💡 Cansado de apps de controle financeiro complexos e pagos?
 
-### ✅ **Controle completo sem complicações**  
-Gerencie **entradas**, **gastos**, **cartões de crédito**, **assinaturas**, e até receba **insights automáticos** sobre sua vida financeira.
+**Nós também.**  
+O **Solvix** nasceu da frustração de querer organizar a vida financeira e só encontrar:
 
-### ✅ **Visual simples, moderno e elegante**  
-Inspirado em dashboards profissionais, mas feito para qualquer pessoa usar de forma intuitiva.
+- aplicativos cheios de telas e funções que você nunca usa;
+- planos pagos para liberar recursos básicos;
+- anúncios por todos os lados.
 
-### ✅ **Sugestões inteligentes de economia**  
-O Solvix anallisa suas movimentações e te mostra onde você pode economizar mais.
+**O Solvix é o oposto disso.**
 
-### ✅ **100% gratuito e local**  
-Seus dados ficam **no seu computador**, sem envio para servidores externos.
+Ele é um gestor financeiro **minimalista**, **focado no essencial** e **100% gratuito**, pensado para rodar localmente no seu computador, com seus dados sob seu controle.
 
-### ✅ **Paleta exclusiva baseada na identidade visual Solvix**  
-Cores suaves, futuristas e profissionais, criando a experiência perfeita para acompanhar seus números.
+Com o Solvix você consegue:
+
+- Registrar **entradas**, **gastos** e **assinaturas recorrentes**;
+- Acompanhar sua **fatura do cartão**, inclusive compras **parceladas**;
+- Visualizar **sugestões inteligentes** de economia com base nos seus hábitos.
 
 ---
 
-# 🚀 **Como Começar (em menos de 2 minutos)**
+## ✨ Recursos em Destaque
 
-### **1. Clone o repositório**
+- **Visão Geral Clara**  
+  • Saldo disponível  
+  • Entradas totais  
+  • Gastos  
+  • Fatura do cartão (incluindo parcelados)
+
+- **Controle de Assinaturas**  
+  • Separa assinaturas por **débito** e **crédito**  
+  • Mostra o total mensal de cada grupo
+
+- **Parcelas Futuras**  
+  • Compras no crédito parceladas são exibidas por mês  
+  • Você enxerga o impacto das parcelas nos próximos meses
+
+- **Sugestões de Economia**  
+  • Alertas quando uma categoria passa de um limite saudável  
+  • Mensagens positivas quando você está economizando bem
+
+- **Interface Dark, Limpa e Direta**  
+  • Visual focado nos números  
+  • Layout pensado para uso diário sem distrações
+
+---
+
+## 🖥️ Veja o Solvix em ação
+
+> Salve seus prints na pasta `app/static/img` (ou equivalente) usando estes nomes
+> ou adapte os caminhos abaixo para os arquivos que você criar.
+
+### 📊 Dashboard Principal
+
+![Dashboard do Solvix](app/static/img/solvix-dashboard.png)
+
+Visão geral com **Entradas**, **Gastos**, **Fatura do Cartão** e **Saldo Disponível**, além da área para **Adicionar Transações**.
+
+---
+
+### 🔁 Assinaturas Ativas
+
+![Assinaturas ativas no Solvix](app/static/img/solvix-subscriptions.png)
+
+Bloco dedicado para **Assinaturas Ativas**, separando o total por **débito** e **crédito**, com valores mensais e logo dos serviços.
+
+---
+
+### 📅 Parcelas Futuras
+
+![Parcelas futuras no Solvix](app/static/img/solvix-installments.png)
+
+Lista de **Parcelas Futuras**, agrupadas por mês, mostrando:
+
+- descrição da compra,
+- qual parcela é (ex: `2/5`),
+- data de vencimento,
+- e o valor de cada parcela.
+
+---
+
+## 🛠️ Como Começar (Setup Rápido)
+
+Em poucos minutos você já consegue registrar suas primeiras transações.
+
+### 1. Pré-requisitos
+
+- Python 3.x instalado  
+- `pip` funcionando normalmente
+
+### 2. Clonar o Repositório
 
 ```bash
 git clone https://github.com/DMendes7/Solvix.git
 cd Solvix
-```
-
----
-
-### **2. Instale as dependências**
-
-```bash
-pip install -r requirements.txt
-```
-ou
-```bash
-python3 -m pip install --user -r requirements.txt
-```
-
----
-
-### **3. Execute o sistema**
-
-```bash
-python app.py
-```
-ou
-```bash
-python3 app.py
-```
----
-
-### Acesse:
-
-```
-http://127.0.0.1:5000
-```
-
----
-
-# 🖼️ **Logo & Identidade Visual**
-
-A Solvix possui:
-
-- `icon-solvix.png` - ícone minimalista  
-- `solvix.png` - logo completa
-
-Localização:
-
-```
-static/img/
-```
-
----
-
-# 🙌 **Contribuindo com o Solvix**
-
-O Solvix é totalmente aberto. Achou um bug? Quer sugerir algo? Envie uma Issue ou Pull Request.
-
----
-
-<p align="center">
-  <b>Comece hoje mesmo a controlar seus gastos com estilo, praticidade e liberdade.</b><br/>
-  ✨ <i>Solvix - O controle financeiro que você sempre quis, sem pagar nada por isso.</i> ✨
-</p>
