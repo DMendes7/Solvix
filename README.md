@@ -34,7 +34,7 @@ Interface em tema escuro, tipografia limpa e componentes projetados para clareza
 
 # 🖥️ **Demonstração do Sistema**
 
-Abaixo estão algumas telas principais do Solvix (certifique-se de já ter salvo as imagens na pasta `app/static/img/`):
+Abaixo estão algumas telas principais do Solvix:
 
 ---
 
