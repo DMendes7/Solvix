@@ -60,10 +60,23 @@ function formatCurrency(value) {
   }).format(value || 0);
 }
 
+// 🔹 NOVO: interpreta "YYYY-MM-DD" como data local (sem timezone)
+function parseLocalDateFromISO(dateString) {
+  if (!dateString) return null;
+
+  const datePart = String(dateString).split("T")[0];
+  const [year, month, day] = datePart.split("-").map(Number);
+
+  if (!year || !month || !day) return null;
+
+  const d = new Date(year, month - 1, day); // mês 0-based
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+// 🔹 ALTERADO: agora usa parseLocalDateFromISO
 function formatDate(dateString) {
-  // aceita "YYYY-MM-DD" ou ISO
-  const d = new Date(dateString);
-  if (Number.isNaN(d.getTime())) return dateString;
+  const d = parseLocalDateFromISO(dateString);
+  if (!d) return dateString || "";
   return d.toLocaleDateString("pt-BR");
 }
 
@@ -233,7 +246,15 @@ function renderTransactions(){
     return;
   }
 
-  const sorted = [...transactions].sort((a, b) => new Date(b.data) - new Date(a.data));
+  // 🔹 ALTERADO: ordenação usando parseLocalDateFromISO
+  const sorted = [...transactions].sort((a, b) => {
+    const da = parseLocalDateFromISO(a.data);
+    const db = parseLocalDateFromISO(b.data);
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return db - da; // mais recente primeiro
+  });
 
   list.innerHTML = sorted.map(t => {
     const desc = (t.descricao || t.categoria || "").trim();
