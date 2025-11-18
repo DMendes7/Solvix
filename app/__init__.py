@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 def create_app():
-    # usa instance_relative_config para salvar o DB em /instance/solvix.db
+    # usa instance_relative_config para salvar o DB em /instance/solvix.db (modo local)
     app = Flask(
         __name__,
         instance_relative_config=True,
@@ -21,11 +21,25 @@ def create_app():
     # em produção, configure a variável de ambiente SECRET_KEY
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "troque-esta-chave-em-producao")
 
-    # SQLite persistente em instance/solvix.db
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
-        app.instance_path,
-        "solvix.db",
-    )
+    # ---- BANCO DE DADOS ----
+    #
+    # Em produção (Render), usaremos DATABASE_URL (Postgres).
+    # Em desenvolvimento/local, continuamos com SQLite em instance/solvix.db.
+    db_url = os.environ.get("DATABASE_URL")
+
+    if db_url:
+        # Render / Heroku costumam usar prefixo postgres:// (depreciado)
+        # Ajustamos para postgresql:// se necessário.
+        if db_url.startswith("postgres://"):
+            db_url = db_url.replace("postgres://", "postgresql://", 1)
+        app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+    else:
+        # fallback local (como era antes)
+        app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(
+            app.instance_path,
+            "solvix.db",
+        )
+
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     app.config["JSON_SORT_KEYS"] = False
 
