@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='img/icon-solvix.png') }}" type="image/png">
+    <title>Solvix - Login</title>
+    <meta name="description" content="Acesse seu painel Solvix para gerenciar suas finanças pessoais.">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="login-page">
+        <div class="login-card card">
+            <div class="login-logo">
+                <div class="login-logo-icon">
+                    <img src="{{ url_for('static', filename='img/icon-solvix.png') }}" alt="Logo Solvix">
+                </div>
+                <h1 class="login-title">SOLVIX</h1>
+                <p class="login-subtitle">Entre para acessar seu painel financeiro</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="alert alert-{{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('routes.login') }}">
+                <div class="form-group">
+                    <label for="username">Usuário</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="Digite seu usuário"
+                        required
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Senha</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Digite sua senha"
+                        required
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-primary login-button">
+                    Entrar
+                </button>
+            </form>
+
+            <p class="login-footer-text">
+                Dica: para testes, use <strong>dmendes / root</strong> ou <strong>mage / davilindo</strong>.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

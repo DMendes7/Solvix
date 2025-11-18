@@ -17,6 +17,10 @@ class Transaction(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
 
+    # Associação ao usuário dono da transação
+    # (preenchemos isso nas rotas com base no usuário logado)
+    user_id = db.Column(db.Integer, nullable=True)
+
     # Campos obrigatórios
     tipo = db.Column(db.String(10), nullable=False)          # 'income' ou 'expense'
     valor = db.Column(db.Float, nullable=False)              # valor principal informado
@@ -72,6 +76,7 @@ class Transaction(db.Model):
         """
         return {
             "id": self.id,
+            "user_id": self.user_id,
             "tipo": self.tipo,
             "valor": self.valor,
             "categoria": self.categoria,

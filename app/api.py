@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from datetime import datetime, date
 from calendar import monthrange
 
@@ -27,17 +27,17 @@ def month_bounds(year: int, month: int):
     return first, last
 
 
-def compute_monthly_bill(year: int, month: int):
+def compute_monthly_bill(year: int, month: int, user_id=None):
     """
-    Calcula a fatura do cartão para um mês:
+    Calcula a fatura do cartão para um mês, PARA UM USUÁRIO:
 
     - Compras à vista no crédito (não parceladas), não quitadas.
     - Parcelas (InstallmentCharge) com due_date dentro do mês, não pagas.
     """
     first, last = month_bounds(year, month)
 
-    # 1) Compras à vista no crédito, ainda não quitadas
-    one_shot_q = Transaction.query.filter(
+    # 1) Compras à vista no crédito, ainda não quitadas (do usuário)
+    one_shot_filter = [
         Transaction.tipo == "expense",
         Transaction.meio_pagamento == "credit",
         Transaction.is_installment.is_(False),
@@ -45,21 +45,30 @@ def compute_monthly_bill(year: int, month: int):
         Transaction.settled.is_(False),
         Transaction.data >= first,
         Transaction.data <= last,
-    ).all()
+    ]
+    if user_id is not None:
+        one_shot_filter.append(Transaction.user_id == user_id)
+
+    one_shot_q = Transaction.query.filter(*one_shot_filter).all()
 
     one_shot_total = sum(t.valor for t in one_shot_q)
     one_shot_ids = [t.id for t in one_shot_q]
 
-    # 2) Parcelas que vencem neste mês, ainda não pagas
-    installment_q = (
-        InstallmentCharge.query.join(InstallmentPlan)
+    # 2) Parcelas que vencem neste mês, ainda não pagas (do usuário)
+    installment_query = (
+        InstallmentCharge.query
+        .join(InstallmentPlan)
+        .join(Transaction, InstallmentPlan.transaction_id == Transaction.id)
         .filter(
             InstallmentCharge.paid.is_(False),
             InstallmentCharge.due_date >= first,
             InstallmentCharge.due_date <= last,
         )
-        .all()
     )
+    if user_id is not None:
+        installment_query = installment_query.filter(Transaction.user_id == user_id)
+
+    installment_q = installment_query.all()
 
     installments_total = sum(c.amount for c in installment_q)
     installment_ids = [c.id for c in installment_q]
@@ -89,6 +98,17 @@ def add_months(base_date: date, months: int) -> date:
     return date(year, month, day)
 
 
+def _require_user():
+    """
+    Helper interno para garantir que há um usuário logado.
+    Retorna user_id ou uma resposta JSON (401).
+    """
+    user_id = session.get("user_id")
+    if not user_id:
+        return None, jsonify({"error": "Usuário não autenticado."}), 401
+    return user_id, None, None
+
+
 # -------------------------------------------------------------------
 # Rotas de TRANSAÇÕES (lista, criação, exclusão)
 # -------------------------------------------------------------------
@@ -96,15 +116,24 @@ def add_months(base_date: date, months: int) -> date:
 
 @api.route("/transactions", methods=["GET"])
 def get_transactions():
-    """Retorna todas as transações, ordenadas da mais recente para a mais antiga."""
-    transactions = Transaction.query.order_by(Transaction.data.desc()).all()
+    """Retorna as transações do usuário logado, da mais recente para a mais antiga."""
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
+    transactions = (
+        Transaction.query
+        .filter(Transaction.user_id == user_id)
+        .order_by(Transaction.data.desc())
+        .all()
+    )
     return jsonify([t.to_dict() for t in transactions])
 
 
 @api.route("/transactions", methods=["POST"])
 def add_transaction():
     """
-    Cria uma nova transação.
+    Cria uma nova transação para o usuário logado.
 
     Casos suportados:
       - Entrada (income)
@@ -112,6 +141,10 @@ def add_transaction():
       - Assinaturas (recorrente, com logo)
       - Compra parcelada (is_installment = True, somente crédito)
     """
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
     data = request.get_json()
     if not data:
         return jsonify({"error": "Dados JSON ausentes ou mal formatados"}), 400
@@ -223,6 +256,7 @@ def add_transaction():
     # 6. Criação da transação base
     # ------------------------------------------------------------------
     new_transaction = Transaction(
+        user_id=user_id,
         tipo=tipo,
         valor=valor,
         categoria=categoria,
@@ -263,7 +297,7 @@ def add_transaction():
             if installment_mode == "parcela":
                 amount_per_installment = valor
             else:
-                # Divide o total em N parcelas (última ajusta centavos)
+                # valor informado é o total da compra
                 base = round(total_amount / installment_count, 2)
                 # Ajuste na última parcela
                 values = [base] * installment_count
@@ -303,8 +337,22 @@ def add_transaction():
 
 @api.route("/transactions/<int:transaction_id>", methods=["DELETE"])
 def delete_transaction(transaction_id: int):
-    """Deleta uma transação pelo ID (e, se for parcelada, o plano/parcelas via cascade)."""
-    transaction = Transaction.query.get_or_404(transaction_id)
+    """
+    Deleta uma transação pelo ID (e, se for parcelada, o plano/parcelas via cascade),
+    APENAS do usuário logado.
+    """
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
+    transaction = (
+        Transaction.query
+        .filter(
+            Transaction.id == transaction_id,
+            Transaction.user_id == user_id,
+        )
+        .first_or_404()
+    )
 
     try:
         db.session.delete(transaction)
@@ -325,15 +373,20 @@ def delete_transaction(transaction_id: int):
 @api.route("/billing/current", methods=["GET"])
 def get_current_bill():
     """
-    Retorna a fatura do cartão do mês atual (ou de ano/mês passados via query):
+    Retorna a fatura do cartão do mês atual (ou de ano/mês passados via query)
+    para o usuário logado:
 
       /api/billing/current?year=2025&month=11
     """
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
     today = date.today()
     year = int(request.args.get("year", today.year))
     month = int(request.args.get("month", today.month))
 
-    bill = compute_monthly_bill(year, month)
+    bill = compute_monthly_bill(year, month, user_id=user_id)
 
     return jsonify(
         {
@@ -349,7 +402,7 @@ def get_current_bill():
 @api.route("/billing/pay", methods=["POST"])
 def pay_current_bill():
     """
-    Paga a fatura de um mês:
+    Paga a fatura de um mês PARA O USUÁRIO LOGADO:
 
       body JSON opcional:
       {
@@ -363,6 +416,10 @@ def pay_current_bill():
       - parcelas do mês como pagas (paid = True)
       - cria uma Transaction de 'Pagamento de Fatura' (débito)
     """
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
     today = date.today()
     data_json = request.get_json() or {}
 
@@ -378,7 +435,7 @@ def pay_current_bill():
     else:
         payment_date = today
 
-    bill = compute_monthly_bill(year, month)
+    bill = compute_monthly_bill(year, month, user_id=user_id)
     total = bill["total"]
 
     if total <= 0:
@@ -403,6 +460,7 @@ def pay_current_bill():
 
         # 3) Cria transação de pagamento de fatura (saída no débito)
         payment_tx = Transaction(
+            user_id=user_id,
             tipo="expense",
             valor=total,
             categoria="Pagamento de Fatura",
@@ -436,7 +494,7 @@ def pay_current_bill():
 @api.route("/installments/future", methods=["GET"])
 def get_future_installments():
     """
-    Retorna parcelas futuras (não pagas, com due_date > hoje),
+    Retorna parcelas futuras (não pagas, com due_date > hoje) do usuário logado,
     agrupadas por mês. Exemplo de resposta:
 
     [
@@ -452,17 +510,25 @@ def get_future_installments():
       ...
     ]
     """
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
     today = date.today()
 
-    charges = (
-        InstallmentCharge.query.join(InstallmentPlan)
+    charges_query = (
+        InstallmentCharge.query
+        .join(InstallmentPlan)
+        .join(Transaction, InstallmentPlan.transaction_id == Transaction.id)
         .filter(
             InstallmentCharge.paid.is_(False),
             InstallmentCharge.due_date > today,
         )
-        .order_by(InstallmentCharge.due_date)
-        .all()
     )
+    if user_id is not None:
+        charges_query = charges_query.filter(Transaction.user_id == user_id)
+
+    charges = charges_query.order_by(InstallmentCharge.due_date).all()
 
     grouped = {}
     for c in charges:
