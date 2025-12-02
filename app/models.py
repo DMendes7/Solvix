@@ -177,3 +177,123 @@ class InstallmentCharge(db.Model):
             f"<InstallmentCharge plan={self.plan_id} "
             f"n={self.installment_number} amount={self.amount} due={self.due_date}>"
         )
+
+
+# ============================================================
+# NOVOS MODELOS – "CAIXINHAS" / RESERVAS (INVESTIMENTOS)
+# ============================================================
+
+class SavingBox(db.Model):
+    """
+    Caixinha / reserva de dinheiro (tipo porquinho/inter caixinhas).
+
+    Cada usuário pode ter várias SavingBox. O saldo é calculado
+    a partir dos movimentos (SavingMovement).
+    """
+    __tablename__ = "saving_boxes"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Dono da caixinha
+    user_id = db.Column(db.Integer, nullable=False)
+
+    # Nome da caixinha (ex.: "Reserva de Emergência", "Viagem", etc.)
+    name = db.Column(db.String(100), nullable=False)
+
+    # Descrição opcional
+    description = db.Column(db.String(255), nullable=True)
+
+    # Meta opcional (ex.: quero juntar 10.000 aqui)
+    target_amount = db.Column(db.Float, nullable=True)
+
+    # Marcar se a caixinha está arquivada / inativa
+    archived = db.Column(db.Boolean, default=False)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relação com os movimentos
+    movements = db.relationship(
+        "SavingMovement",
+        backref="box",
+        cascade="all, delete-orphan",
+        order_by="SavingMovement.date.desc()"
+    )
+
+    def current_balance(self) -> float:
+        """
+        Saldo calculado com base nos movimentos:
+        depósitos somam, retiradas subtraem.
+        """
+        total = 0.0
+        for m in self.movements:
+            if m.type == "deposit":
+                total += m.amount
+            elif m.type == "withdraw":
+                total -= m.amount
+        return total
+
+    def to_dict(self, include_movements: bool = False):
+        data = {
+            "id": self.id,
+            "user_id": self.user_id,
+            "name": self.name,
+            "description": self.description,
+            "target_amount": self.target_amount,
+            "archived": self.archived,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "current_balance": self.current_balance(),
+        }
+        if include_movements:
+            data["movements"] = [m.to_dict() for m in self.movements]
+        return data
+
+
+class SavingMovement(db.Model):
+    """
+    Movimento dentro de uma caixinha:
+
+      - 'deposit'  -> dinheiro indo para a caixinha
+      - 'withdraw' -> dinheiro saindo da caixinha (ex.: retorno para saldo disponível)
+    """
+    __tablename__ = "saving_movements"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    box_id = db.Column(
+        db.Integer,
+        db.ForeignKey("saving_boxes.id"),
+        nullable=False
+    )
+
+    # Tipo de movimento: 'deposit' ou 'withdraw'
+    type = db.Column(db.String(20), nullable=False)
+
+    # Valor do movimento (sempre positivo; o sinal é interpretado pelo 'type')
+    amount = db.Column(db.Float, nullable=False)
+
+    # Data em que o movimento ocorreu (data lógica)
+    date = db.Column(db.Date, nullable=False, default=date.today)
+
+    # Descrição opcional (ex.: "Depósito mensal", "Resgate p/ conta corrente")
+    description = db.Column(db.String(255), nullable=True)
+
+    # Referência opcional à transação principal (quando houver integração)
+    transaction_id = db.Column(
+        db.Integer,
+        db.ForeignKey("transaction.id"),
+        nullable=True
+    )
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "box_id": self.box_id,
+            "type": self.type,
+            "amount": self.amount,
+            "date": self.date.isoformat() if self.date else None,
+            "description": self.description,
+            "transaction_id": self.transaction_id,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }

@@ -221,28 +221,35 @@ function calculateSummary() {
 }
 
 function updateSummary() {
+  const incomeEl = document.getElementById("totalIncome");
+  const expensesEl = document.getElementById("totalExpenses");
+  const billEl = document.getElementById("creditCardBill");
+  const balanceEl = document.getElementById("balance");
+
+  // Se não estiver na tela principal (dashboard), não faz nada
+  if (!incomeEl || !expensesEl || !billEl || !balanceEl) {
+    return;
+  }
+
   const s = calculateSummary();
 
-  document.getElementById("totalIncome").textContent = formatCurrency(
-    s.totalIncome
-  );
-  document.getElementById("totalExpenses").textContent = formatCurrency(
-    s.totalExpenses
-  );
-  document.getElementById("creditCardBill").textContent = formatCurrency(
-    s.creditCardBill
-  );
+  incomeEl.textContent = formatCurrency(s.totalIncome);
+  expensesEl.textContent = formatCurrency(s.totalExpenses);
+  billEl.textContent = formatCurrency(s.creditCardBill);
 
-  const balanceEl = document.getElementById("balance");
   balanceEl.textContent = formatCurrency(s.balance);
   balanceEl.style.color =
     s.balance >= 0 ? "hsl(var(--primary))" : "hsl(var(--destructive))";
 }
 
-function renderTransactions(){
+function renderTransactions() {
   const list = document.getElementById("transactionsList");
+  // Se não estiver na tela principal (dashboard), simplesmente não faz nada
+  if (!list) return;
+
   if (!transactions.length) {
-    list.innerHTML = '<div class="empty-state">Nenhuma transação cadastrada ainda</div>';
+    list.innerHTML =
+      '<div class="empty-state">Nenhuma transação cadastrada ainda</div>';
     return;
   }
 
@@ -256,75 +263,74 @@ function renderTransactions(){
     return db - da; // mais recente primeiro
   });
 
-  list.innerHTML = sorted.map(t => {
-    const desc = (t.descricao || t.categoria || "").trim();
+  list.innerHTML = sorted
+    .map((t) => {
+      const desc = (t.descricao || t.categoria || "").trim();
 
-    // 🔹 Título exibido na lista (aqui entra o "(5x)")
-    let title = desc || t.categoria;
-    if (t.is_installment && t.installment_count > 1) {
-      title += ` (${t.installment_count}x)`;
-    }
+      let title = desc || t.categoria;
+      if (t.is_installment && t.installment_count > 1) {
+        title += ` (${t.installment_count}x)`;
+      }
 
-    // ⭐️ Lógica de Geração do Logo/Ícone ⭐️
-    let logoHtml;
-    if (t.logo) {
-      // 1. Caso Assinatura/Logo (MANTÉM IMAGEM)
-      logoHtml = `<img src="${t.logo}" alt="${desc}">`;
-    } else {
-      // 2. Caso Sem Logo (USA ÍCONE DE TIPO)
-      const isIncome = t.tipo === 'income';
-      const arrow = isIncome
-        ? '<polyline points="18 15 12 9 6 15"></polyline>' // seta pra cima
-        : '<polyline points="6 9 12 15 18 9"></polyline>';   // seta pra baixo
+      let logoHtml;
+      if (t.logo) {
+        logoHtml = `<img src="${t.logo}" alt="${desc}">`;
+      } else {
+        const isIncome = t.tipo === "income";
+        const arrow = isIncome
+          ? '<polyline points="18 15 12 9 6 15"></polyline>'
+          : '<polyline points="6 9 12 15 18 9"></polyline>';
 
-      logoHtml = `
-        <span class="transaction-logo-type ${isIncome ? 'income' : 'expense'}">
-          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
-               viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            ${arrow}
-          </svg>
-        </span>`;
-    }
-    // ⭐️ FIM da lógica de logo/ícone ⭐️
-
-    const badge = t.meio_pagamento
-      ? `<span class="badge badge-${t.meio_pagamento}">
-           ${t.meio_pagamento === 'credit' ? 'Crédito' : 'Débito'}
-         </span>`
-      : (t.categoria === "Pagamento de Fatura"
-          ? `<span class="badge badge-debit">Débito</span>`
-          : "");
-
-    return `
-      <div class="transaction-item">
-        <div class="transaction-info">
-          <div class="transaction-logo">${logoHtml}</div>
-          <div class="transaction-details">
-            <h4>${title}</h4>
-            <p>${t.categoria} • ${formatDate(t.data)}</p>
-          </div>
-        </div>
-        <div class="transaction-amount-section">
-          <span class="transaction-amount"
-                style="color:${t.tipo === 'income'
-                  ? 'hsl(var(--success))'
-                  : 'hsl(var(--destructive))'}">
-            ${t.tipo === 'income' ? '+' : '-'} ${formatCurrency(t.valor)}
-          </span>
-          ${badge}
-          <button class="btn-delete" onclick="deleteTransaction(${t.id})" title="Excluir">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+        logoHtml = `
+          <span class="transaction-logo-type ${isIncome ? "income" : "expense"}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
                  viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 6h18"></path>
-              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
-              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              ${arrow}
             </svg>
-          </button>
-        </div>
-      </div>`;
-  }).join('');
+          </span>`;
+      }
+
+      const badge = t.meio_pagamento
+        ? `<span class="badge badge-${t.meio_pagamento}">
+             ${t.meio_pagamento === "credit" ? "Crédito" : "Débito"}
+           </span>`
+        : t.categoria === "Pagamento de Fatura"
+        ? `<span class="badge badge-debit">Débito</span>`
+        : "";
+
+      return `
+        <div class="transaction-item">
+          <div class="transaction-info">
+            <div class="transaction-logo">${logoHtml}</div>
+            <div class="transaction-details">
+              <h4>${title}</h4>
+              <p>${t.categoria} • ${formatDate(t.data)}</p>
+            </div>
+          </div>
+          <div class="transaction-amount-section">
+            <span class="transaction-amount"
+                  style="color:${
+                    t.tipo === "income"
+                      ? "hsl(var(--success))"
+                      : "hsl(var(--destructive))"
+                  }">
+              ${t.tipo === "income" ? "+" : "-"} ${formatCurrency(t.valor)}
+            </span>
+            ${badge}
+            <button class="btn-delete" onclick="deleteTransaction(${t.id})" title="Excluir">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+                   viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"></path>
+                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        </div>`;
+    })
+    .join("");
 }
 
 function renderSubscriptions() {
@@ -946,3 +952,606 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 // global para o botão de excluir
 window.deleteTransaction = deleteTransaction;
+
+// ==========================
+// CAIXINHAS (Saving Boxes)
+// ==========================
+
+let savingBoxes = [];
+let currentSavingBox = null;
+
+// ---- Helpers de normalização ----
+function pickNumber(obj, keys) {
+  if (!obj) return 0;
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    if (obj[k] !== undefined && obj[k] !== null) {
+      const n = Number(obj[k]);
+      if (!Number.isNaN(n)) return n;
+    }
+  }
+  return 0;
+}
+
+function normalizeSavingBox(raw) {
+  if (!raw) return null;
+  return {
+    raw,
+    id: raw.id,
+    name: raw.name || raw.titulo || "Caixinha",
+    description: raw.description || raw.descricao || null,
+    goal: pickNumber(raw, ["goal", "target_amount", "meta"]),
+    balance: pickNumber(raw, ["balance", "current_balance", "saldo"]),
+    total_in: pickNumber(raw, ["total_in", "totalIn"]),
+    total_out: pickNumber(raw, ["total_out", "totalOut"]),
+    created_at: raw.created_at || raw.createdAt || null,
+    movements: raw.movements || raw.movement_list || [],
+  };
+}
+
+// ---- API de Caixinhas ----
+
+async function apiListSavingBoxes() {
+  const r = await fetch("/api/saving-boxes");
+  if (!r.ok) throw new Error("Falha ao carregar caixinhas");
+  const data = await r.json();
+  return (data || []).map(normalizeSavingBox);
+}
+
+async function apiCreateSavingBox(payload) {
+  const r = await fetch("/api/saving-boxes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: "Erro ao criar caixinha" }));
+    throw new Error(err.error || "Erro ao criar caixinha");
+  }
+  const data = await r.json();
+  return normalizeSavingBox(data);
+}
+
+async function apiGetSavingBox(boxId) {
+  const r = await fetch(`/api/saving-boxes/${boxId}`);
+  if (!r.ok) throw new Error("Falha ao carregar detalhes da caixinha");
+  const data = await r.json();
+  return normalizeSavingBox(data);
+}
+
+async function apiDepositSavingBox(boxId, payload) {
+  const r = await fetch(`/api/saving-boxes/${boxId}/deposit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: "Erro ao registrar depósito" }));
+    throw new Error(err.error || "Erro ao registrar depósito");
+  }
+  const data = await r.json();
+  // API devolve {"box": ..., "transaction": ...}
+  return normalizeSavingBox(data.box || data);
+}
+
+async function apiWithdrawSavingBox(boxId, payload) {
+  const r = await fetch(`/api/saving-boxes/${boxId}/withdraw`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ error: "Erro ao registrar resgate" }));
+    throw new Error(err.error || "Erro ao registrar resgate");
+  }
+  const data = await r.json();
+  return normalizeSavingBox(data.box || data);
+}
+
+// ---- UI: Detalhes & Movimentos ----
+
+function renderSavingBoxesList() {
+  // agora usa a lista da tela nova: #investmentsList
+  const listEl = document.getElementById("investmentsList");
+  if (!listEl) return;
+
+  if (!savingBoxes.length) {
+    listEl.innerHTML =
+      '<div class="empty-state">Nenhuma caixinha criada ainda. Crie uma ao lado para começar a guardar!</div>';
+    return;
+  }
+
+  const sorted = [...savingBoxes].sort((a, b) => {
+    const da = parseLocalDateFromISO(a.created_at);
+    const db = parseLocalDateFromISO(b.created_at);
+    if (da && db) return db - da;
+    if (da && !db) return -1;
+    if (!da && db) return 1;
+    return (a.name || "").localeCompare(b.name || "");
+  });
+
+  listEl.innerHTML = sorted
+    .map((box) => {
+      const goal = box.goal;
+      const bal = box.balance;
+      let progress = 0;
+      if (goal > 0) progress = Math.min(100, (bal / goal) * 100);
+
+      const subtitle =
+        goal > 0
+          ? `Meta: ${formatCurrency(goal)} • ${progress.toFixed(0)}% atingido`
+          : "Sem meta definida";
+
+      const isActive = currentSavingBox && currentSavingBox.id === box.id;
+
+      return `
+        <div class="transaction-item investment-item ${isActive ? "is-active" : ""}"
+             data-investment-id="${box.id}">
+          <div class="transaction-info">
+            <div class="transaction-logo">
+              <span class="transaction-logo-type income">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="18" height="14" rx="2" ry="2"></rect>
+                  <path d="M12 8v4"></path>
+                  <path d="M9 11h6"></path>
+                </svg>
+              </span>
+            </div>
+            <div class="transaction-details">
+              <h4>${box.name}</h4>
+              <p>${subtitle}</p>
+            </div>
+          </div>
+          <div class="transaction-amount-section">
+            <span class="transaction-amount" style="color: hsl(var(--primary));">
+              ${formatCurrency(bal)}
+            </span>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function buildSavingBoxDetailsLayout() {
+  const detailsRoot = document.getElementById("savingBoxDetails");
+  if (!detailsRoot) return;
+
+  detailsRoot.innerHTML = `
+    <div class="saving-box-header">
+      <div>
+        <h3 id="savingBoxTitle"></h3>
+        <p id="savingBoxMeta" class="saving-box-meta"></p>
+      </div>
+      <div class="saving-box-balance-summary">
+        <span>Saldo na caixinha</span>
+        <strong id="savingBoxBalance"></strong>
+      </div>
+    </div>
+
+    <div class="saving-box-progress-wrapper">
+      <div class="saving-box-progress-bar">
+        <div id="savingBoxProgressFill" class="saving-box-progress-fill"></div>
+      </div>
+      <span id="savingBoxProgressLabel" class="saving-box-progress-label"></span>
+    </div>
+
+    <div class="saving-box-main-layout">
+      <div class="saving-box-movements">
+        <h4>Movimentos</h4>
+        <div id="savingBoxMovementsList"></div>
+      </div>
+
+      <div class="saving-box-actions">
+        <h4>Adicionar aporte</h4>
+        <form id="savingBoxDepositForm" class="saving-box-form">
+          <div class="form-group">
+            <label for="savingBoxDepositAmount">Valor (R$)</label>
+            <input id="savingBoxDepositAmount" type="number" step="0.01" inputmode="decimal" required>
+          </div>
+          <div class="form-group">
+            <label for="savingBoxDepositDate">Data</label>
+            <input id="savingBoxDepositDate" type="date" required>
+          </div>
+          <div class="form-group">
+            <label for="savingBoxDepositDesc">Descrição - opcional</label>
+            <input id="savingBoxDepositDesc" type="text" placeholder="Ex: Depósito mensal">
+          </div>
+          <button type="submit" class="btn btn-primary">Adicionar</button>
+        </form>
+
+        <h4 style="margin-top: 1.5rem;">Fazer resgate</h4>
+        <form id="savingBoxWithdrawForm" class="saving-box-form">
+          <div class="form-group">
+            <label for="savingBoxWithdrawAmount">Valor (R$)</label>
+            <input id="savingBoxWithdrawAmount" type="number" step="0.01" inputmode="decimal" required>
+          </div>
+          <div class="form-group">
+            <label for="savingBoxWithdrawDate">Data</label>
+            <input id="savingBoxWithdrawDate" type="date" required>
+          </div>
+          <div class="form-group">
+            <label for="savingBoxWithdrawDesc">Descrição - opcional</label>
+            <input id="savingBoxWithdrawDesc" type="text" placeholder="Ex: Resgate para gastos">
+          </div>
+          <button type="submit" class="btn btn-secondary">Resgatar</button>
+        </form>
+      </div>
+    </div>
+  `;
+
+  const depositDate = document.getElementById("savingBoxDepositDate");
+  const withdrawDate = document.getElementById("savingBoxWithdrawDate");
+  const today = new Date();
+  if (depositDate) depositDate.valueAsDate = today;
+  if (withdrawDate) withdrawDate.valueAsDate = today;
+}
+
+function renderSavingBoxMovements(box) {
+  const listEl = document.getElementById("investmentTransactionsList");
+  if (!listEl) return;
+
+  const movements = box.movements || [];
+
+  if (!movements.length) {
+    listEl.innerHTML =
+      '<div class="empty-state">Nenhum movimento nesta caixinha ainda.</div>';
+    return;
+  }
+
+  const sorted = [...movements].sort((a, b) => {
+    const da = parseLocalDateFromISO(a.date);
+    const db = parseLocalDateFromISO(b.date);
+    if (!da && !db) return 0;
+    if (!da) return 1;
+    if (!db) return -1;
+    return db - da;
+  });
+
+  listEl.innerHTML = sorted
+    .map((m) => {
+      const isDeposit = m.type === "deposit" || m.type === "in";
+      const sign = isDeposit ? "+" : "-";
+      const color = isDeposit
+        ? "hsl(var(--success))"
+        : "hsl(var(--destructive))";
+      const desc =
+        (m.description || "").trim() ||
+        (isDeposit ? "Depósito" : "Resgate");
+
+      return `
+        <div class="transaction-item">
+          <div class="transaction-info">
+            <div class="transaction-logo">
+              <span class="transaction-logo-type ${isDeposit ? "income" : "expense"}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  ${
+                    isDeposit
+                      ? '<polyline points="18 15 12 9 6 15"></polyline>'
+                      : '<polyline points="6 9 12 15 18 9"></polyline>'
+                  }
+                </svg>
+              </span>
+            </div>
+            <div class="transaction-details">
+              <h4>${desc}</h4>
+              <p>${formatDate(m.date)}</p>
+            </div>
+          </div>
+          <div class="transaction-amount-section">
+            <span class="transaction-amount" style="color: ${color};">
+              ${sign} ${formatCurrency(m.amount)}
+            </span>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderSavingBoxDetails(box) {
+  const emptyStateEl = document.getElementById("investmentEmptyState");
+  const detailsEl = document.getElementById("investmentDetails");
+  if (!detailsEl || !emptyStateEl) return;
+
+  // mostra/oculta blocos
+  emptyStateEl.style.display = "none";
+  detailsEl.style.display = "block";
+
+  const titleEl = document.getElementById("investmentTitle");
+  const subtitleEl = document.getElementById("investmentSubtitle");
+  const balanceEl = document.getElementById("investmentBalance");
+  const totalInEl = document.getElementById("investmentTotalIn");
+  const totalOutEl = document.getElementById("investmentTotalOut");
+  const progressTextEl = document.getElementById("investmentProgressText");
+  const progressBarEl = document.getElementById("investmentProgressBar");
+
+  const name = box.name || "Caixinha";
+  const goal = Number(box.goal || 0);
+  const balance = Number(box.balance || 0);
+  const totalIn = Number(box.total_in || 0);
+  const totalOut = Number(box.total_out || 0);
+
+  let progress = 0;
+  if (goal > 0) {
+    progress = Math.min(100, (balance / goal) * 100);
+  }
+
+  if (titleEl) titleEl.textContent = name;
+
+  if (subtitleEl) {
+    const goalText = goal > 0 ? formatCurrency(goal) : "sem meta definida";
+    subtitleEl.textContent = `Meta: ${goalText} • Progresso: ${progress.toFixed(
+      0
+    )}%`;
+  }
+
+  if (balanceEl) balanceEl.textContent = formatCurrency(balance);
+  if (totalInEl) totalInEl.textContent = formatCurrency(totalIn);
+  if (totalOutEl) totalOutEl.textContent = formatCurrency(totalOut);
+
+  if (progressTextEl) {
+    progressTextEl.textContent = `${progress.toFixed(0)}%`;
+  }
+  if (progressBarEl) {
+    progressBarEl.style.setProperty("--progress", `${progress}%`);
+  }
+
+  renderSavingBoxMovements(box);
+  wireSavingBoxDetailForms();
+}
+
+// ---- Eventos dos forms de depósito / resgate ----
+
+function wireSavingBoxDetailForms() {
+  const addForm = document.getElementById("investmentAddForm");
+  const withdrawForm = document.getElementById("investmentWithdrawForm");
+
+  if (addForm) {
+    addForm.onsubmit = async (e) => {
+      e.preventDefault();
+      if (!currentSavingBox) {
+        showToast("Selecione uma caixinha primeiro", "error");
+        return;
+      }
+
+      const amountInput = document.getElementById("investmentAddAmount");
+      const dateInput = document.getElementById("investmentAddDate");
+      const descInput = document.getElementById("investmentAddDescription");
+
+      const amountStr = amountInput ? amountInput.value.trim() : "";
+      const dateStr = dateInput ? dateInput.value : "";
+      const desc = descInput ? descInput.value.trim() : "";
+
+      const amount = parseFloat(amountStr.replace(",", "."));
+      if (!amountStr || Number.isNaN(amount) || amount <= 0 || !dateStr) {
+        showToast("Preencha valor e data válidos para o aporte", "error");
+        return;
+      }
+
+      const payload = {
+        amount,
+        date: dateStr,
+        description: desc || null,
+      };
+
+      try {
+        const updated = await apiDepositSavingBox(currentSavingBox.id, payload);
+        currentSavingBox = updated;
+
+        const idx = savingBoxes.findIndex((b) => b.id === updated.id);
+        if (idx >= 0) savingBoxes[idx] = updated;
+
+        renderSavingBoxesList();
+        renderSavingBoxDetails(updated);
+
+        addForm.reset();
+        if (dateInput) dateInput.valueAsDate = new Date();
+
+        showToast("Aporte registrado com sucesso!");
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Erro ao registrar aporte", "error");
+      }
+    };
+  }
+
+  if (withdrawForm) {
+    withdrawForm.onsubmit = async (e) => {
+      e.preventDefault();
+      if (!currentSavingBox) {
+        showToast("Selecione uma caixinha primeiro", "error");
+        return;
+      }
+
+      const amountInput = document.getElementById("investmentWithdrawAmount");
+      const dateInput = document.getElementById("investmentWithdrawDate");
+      const descInput = document.getElementById("investmentWithdrawDescription");
+
+      const amountStr = amountInput ? amountInput.value.trim() : "";
+      const dateStr = dateInput ? dateInput.value : "";
+      const desc = descInput ? descInput.value.trim() : "";
+
+      const amount = parseFloat(amountStr.replace(",", "."));
+      if (!amountStr || Number.isNaN(amount) || amount <= 0 || !dateStr) {
+        showToast("Preencha valor e data válidos para o resgate", "error");
+        return;
+      }
+
+      const payload = {
+        amount,
+        date: dateStr,
+        description: desc || null,
+      };
+
+      try {
+        const updated = await apiWithdrawSavingBox(currentSavingBox.id, payload);
+        currentSavingBox = updated;
+
+        const idx = savingBoxes.findIndex((b) => b.id === updated.id);
+        if (idx >= 0) savingBoxes[idx] = updated;
+
+        renderSavingBoxesList();
+        renderSavingBoxDetails(updated);
+
+        withdrawForm.reset();
+        if (dateInput) dateInput.valueAsDate = new Date();
+
+        showToast(
+          "Resgate registrado com sucesso! A entrada aparecerá como 'Retirada de Caixinha' nas transações."
+        );
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Erro ao registrar resgate", "error");
+      }
+    };
+  }
+}
+
+// ---- Init da página de Caixinhas ----
+async function handleSelectSavingBox(id) {
+  try {
+    const box = await apiGetSavingBox(id);
+    currentSavingBox = box;
+
+    // marca o card ativo
+    const listEl = document.getElementById("investmentsList");
+    if (listEl) {
+      listEl.querySelectorAll(".investment-item").forEach((el) => {
+        const thisId = Number(el.getAttribute("data-investment-id"));
+        el.classList.toggle("is-active", thisId === id);
+      });
+    }
+
+    renderSavingBoxesList();   // garante que a classe is-active se mantenha
+    renderSavingBoxDetails(box);
+  } catch (err) {
+    console.error(err);
+    showToast("Erro ao carregar detalhes da caixinha", "error");
+  }
+}
+
+async function initSavingBoxesPageIfNeeded() {
+  // IDs da tela nova
+  const formEl = document.getElementById("investmentForm");
+  const listEl = document.getElementById("investmentsList");
+  const detailsEl =
+    document.getElementById("investmentDetails") ||
+    document.getElementById("investmentEmptyState");
+
+  // se nada disso existir, não estamos na tela de caixinhas
+  if (!formEl && !listEl && !detailsEl) return;
+
+  // carrega caixinhas do backend
+  try {
+    savingBoxes = await apiListSavingBoxes();
+  } catch (err) {
+    console.error(err);
+    savingBoxes = [];
+    showToast("Não foi possível carregar caixinhas", "error");
+  }
+
+  renderSavingBoxesList();
+
+  // --- criação de nova caixinha ---
+  if (formEl) {
+    formEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const nameInput = document.getElementById("investmentNameInput");
+      const targetInput = document.getElementById("investmentGoalInput");
+      const descInput = document.getElementById("investmentDescriptionInput");
+
+      const name = nameInput ? nameInput.value.trim() : "";
+      const targetStr = targetInput ? targetInput.value.trim() : "";
+      const desc = descInput ? descInput.value.trim() : "";
+
+      if (!name) {
+        showToast("Informe um nome para a caixinha", "error");
+        return;
+      }
+
+      let target_amount = null;
+      if (targetStr) {
+        const n = parseFloat(targetStr.replace(",", "."));
+        if (!Number.isNaN(n) && n > 0) {
+          target_amount = n;
+        }
+      }
+
+      const payload = {
+        name,
+        description: desc || null,
+        target_amount,
+      };
+
+      try {
+        const created = await apiCreateSavingBox(payload);
+        savingBoxes.push(created);
+        currentSavingBox = created;
+        renderSavingBoxesList();
+        renderSavingBoxDetails(created);
+        formEl.reset();
+        showToast("Caixinha criada com sucesso!");
+      } catch (err2) {
+        console.error(err2);
+        showToast(err2.message || "Erro ao criar caixinha", "error");
+      }
+    });
+  }
+
+  // --- clique na lista para selecionar caixinha ---
+  if (listEl) {
+    listEl.addEventListener("click", (e) => {
+      const card = e.target.closest("[data-investment-id]");
+      if (!card) return;
+      const id = Number(card.getAttribute("data-investment-id"));
+      if (!Number.isFinite(id)) return;
+      handleSelectSavingBox(id);
+    });
+  }
+
+  // --- toggles: mostrar/ocultar formulários de aporte/resgate ---
+  const addWrapper = document.getElementById("investmentAddWrapper");
+  const withdrawWrapper = document.getElementById("investmentWithdrawWrapper");
+  const showAddBtn = document.getElementById("showAddForm");
+  const showWithdrawBtn = document.getElementById("showWithdrawForm");
+
+  function toggleActionForms(mode) {
+    if (!addWrapper || !withdrawWrapper || !showAddBtn || !showWithdrawBtn) return;
+
+    if (mode === "add") {
+      addWrapper.style.display = "block";
+      withdrawWrapper.style.display = "none";
+      showAddBtn.classList.add("is-active");
+      showWithdrawBtn.classList.remove("is-active");
+    } else {
+      addWrapper.style.display = "none";
+      withdrawWrapper.style.display = "block";
+      showAddBtn.classList.remove("is-active");
+      showWithdrawBtn.classList.add("is-active");
+    }
+  }
+
+  if (showAddBtn) {
+    showAddBtn.addEventListener("click", () => toggleActionForms("add"));
+  }
+  if (showWithdrawBtn) {
+    showWithdrawBtn.addEventListener("click", () => toggleActionForms("withdraw"));
+  }
+
+  // começa com o formulário de aporte aberto
+  toggleActionForms("add");
+  const today = new Date();
+  const addDateInput = document.getElementById("investmentAddDate");
+  const withdrawDateInput = document.getElementById("investmentWithdrawDate");
+  if (addDateInput) addDateInput.valueAsDate = today;
+  if (withdrawDateInput) withdrawDateInput.valueAsDate = today;
+}
+
+// dispara inicialização das caixinhas quando a página carregar
+document.addEventListener("DOMContentLoaded", initSavingBoxesPageIfNeeded);

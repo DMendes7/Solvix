@@ -72,10 +72,25 @@ def logout():
 @login_required
 def dashboard():
     """Rota principal que renderiza o dashboard."""
-    # O arquivo dashboard.html já está na pasta app/templates/
-    # Aqui podemos passar dados do usuário logado se o template quiser usar
     return render_template(
         "dashboard.html",
+        username=session.get("username"),
+        name=session.get("name"),
+    )
+
+
+# -------------------------------------------------------------------
+# NOVA ROTA: página de Investimentos / Caixinhas
+# -------------------------------------------------------------------
+@routes.route("/investimentos")
+@login_required
+def investimentos():
+    """
+    Tela de caixinhas / investimentos.
+    O template vai consumir a API /api/saving-boxes, /deposit, /withdraw.
+    """
+    return render_template(
+        "investments.html",      # vamos criar esse template depois
         username=session.get("username"),
         name=session.get("name"),
     )

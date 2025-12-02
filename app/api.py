@@ -3,7 +3,13 @@ from datetime import datetime, date
 from calendar import monthrange
 
 from . import db
-from .models import Transaction, InstallmentPlan, InstallmentCharge
+from .models import (
+    Transaction,
+    InstallmentPlan,
+    InstallmentCharge,
+    SavingBox,
+    SavingMovement,
+)
 
 # Blueprint (registrado em __init__.py com url_prefix="/api")
 api = Blueprint("api", __name__)
@@ -554,3 +560,269 @@ def get_future_installments():
     # Ordena por mês
     result = [grouped[k] for k in sorted(grouped.keys())]
     return jsonify(result)
+
+# -------------------------------------------------------------------
+# CAIXINHAS / RESERVAS (SavingBox + SavingMovement)
+# -------------------------------------------------------------------
+
+@api.route("/saving-boxes", methods=["GET"])
+@api.route("/investments", methods=["GET"])  # alias compatível com versão antiga
+def list_saving_boxes():
+    """
+    Lista as caixinhas do usuário logado (ou fallback),
+    com saldo atual calculado.
+    """
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
+    boxes = SavingBox.query.filter_by(user_id=user_id, archived=False).all()
+    return jsonify([b.to_dict(include_movements=False) for b in boxes])
+
+
+@api.route("/saving-boxes", methods=["POST"])
+@api.route("/investments", methods=["POST"])  # alias compatível
+def create_saving_box():
+    """
+    Cria uma nova caixinha para o usuário.
+
+    JSON esperado:
+    {
+      "name": "Reserva de Emergência",
+      "description": "Para imprevistos",
+      "target_amount": 10000.0
+    }
+    """
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
+    data_json = request.get_json() or {}
+
+    name = (data_json.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "O campo 'name' é obrigatório."}), 400
+
+    description = data_json.get("description")
+    target_amount = data_json.get("target_amount")
+
+    if target_amount not in (None, ""):
+        try:
+            target_amount = float(str(target_amount).replace(",", "."))
+        except ValueError:
+            return jsonify(
+                {"error": "O campo 'target_amount' deve ser um número válido."}
+            ), 400
+    else:
+        target_amount = None
+
+    box = SavingBox(
+        user_id=user_id,
+        name=name,
+        description=description,
+        target_amount=target_amount,
+    )
+
+    try:
+        db.session.add(box)
+        db.session.commit()
+        return jsonify(box.to_dict(include_movements=False)), 201
+    except Exception as e:
+        db.session.rollback()
+        print(f"[ERRO] create_saving_box: {e}")
+        return jsonify({"error": "Erro ao criar caixinha."}), 500
+
+
+@api.route("/saving-boxes/<int:box_id>", methods=["GET"])
+@api.route("/investments/<int:box_id>", methods=["GET"])  # alias compatível
+def get_saving_box(box_id: int):
+    """
+    Detalhes de uma caixinha (com movimentos) do usuário.
+    """
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
+    box = SavingBox.query.filter_by(id=box_id, user_id=user_id).first_or_404()
+    return jsonify(box.to_dict(include_movements=True))
+
+
+def _parse_amount_and_date(data_json, default_date: date | None = None):
+    """
+    Helper pra reaproveitar em depósito/saque de caixinha.
+    """
+    amount_raw = data_json.get("amount")
+    if amount_raw in (None, ""):
+        raise ValueError("O campo 'amount' é obrigatório.")
+
+    try:
+        amount = float(str(amount_raw).replace(",", "."))
+    except ValueError:
+        raise ValueError("O campo 'amount' deve ser um número válido.")
+
+    if amount <= 0:
+        raise ValueError("O valor deve ser positivo.")
+
+    date_str = data_json.get("date")
+    if date_str:
+        try:
+            d = parse_date(date_str)
+        except ValueError:
+            raise ValueError("Formato de 'date' inválido. Use AAAA-MM-DD.")
+    else:
+        d = default_date or date.today()
+
+    return amount, d
+
+
+@api.route("/saving-boxes/<int:box_id>/deposit", methods=["POST"])
+@api.route("/investments/<int:box_id>/deposit", methods=["POST"])  # alias
+def deposit_into_saving_box(box_id: int):
+    """
+    Depósito em uma caixinha.
+
+    - Cria um SavingMovement(type='deposit').
+    - Cria uma Transaction de 'expense' para tirar o valor do saldo disponível.
+
+    JSON esperado:
+    {
+      "amount": 200.0,
+      "date": "2025-11-01",   (opcional, default hoje)
+      "description": "Depósito mensal"
+    }
+    """
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
+    box = SavingBox.query.filter_by(id=box_id, user_id=user_id).first_or_404()
+
+    data_json = request.get_json() or {}
+    desc = data_json.get("description")
+
+    try:
+        amount, d = _parse_amount_and_date(data_json)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    tx = Transaction(
+      user_id=user_id,
+      tipo="expense",
+      valor=amount,
+      categoria="Depósito em Caixinha",
+      descricao=desc or f"Depósito em {box.name}",
+      data=d,
+      meio_pagamento="debit",
+      recorrente=False,
+      logo=None,
+    )
+
+    movement = SavingMovement(
+      box_id=box.id,
+      type="deposit",
+      amount=amount,
+      date=d,
+      description=desc or "Depósito em caixinha",
+      transaction_id=None,
+    )
+
+    try:
+        db.session.add(tx)
+        db.session.flush()
+        movement.transaction_id = tx.id
+        db.session.add(movement)
+        db.session.commit()
+
+        db.session.refresh(box)
+
+        return jsonify(
+            {
+                "box": box.to_dict(include_movements=True),
+                "transaction": tx.to_dict(),
+            }
+        ), 201
+    except Exception as e:
+        db.session.rollback()
+        print(f"[ERRO] deposit_into_saving_box: {e}")
+        return jsonify({"error": "Erro ao registrar depósito na caixinha."}), 500
+
+
+@api.route("/saving-boxes/<int:box_id>/withdraw", methods=["POST"])
+@api.route("/investments/<int:box_id>/withdraw", methods=["POST"])  # alias
+def withdraw_from_saving_box(box_id: int):
+    """
+    Resgate de uma caixinha para o saldo disponível.
+
+    - Cria um SavingMovement(type='withdraw').
+    - Cria uma Transaction de 'income' (categoria 'Retirada de Caixinha').
+
+    JSON esperado:
+    {
+      "amount": 150.0,
+      "date": "2025-11-10",  (opcional, default hoje)
+      "description": "Resgate para gastos"
+    }
+    """
+    user_id, error_resp, status = _require_user()
+    if error_resp:
+        return error_resp, status
+
+    box = SavingBox.query.filter_by(id=box_id, user_id=user_id).first_or_404()
+
+    data_json = request.get_json() or {}
+    desc = data_json.get("description")
+
+    try:
+        amount, d = _parse_amount_and_date(data_json)
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+
+    current_balance = box.current_balance()
+    if amount > current_balance + 1e-9:
+        return jsonify(
+            {
+                "error": "Valor de resgate maior que o saldo disponível na caixinha.",
+                "current_balance": current_balance,
+            }
+        ), 400
+
+    tx = Transaction(
+      user_id=user_id,
+      tipo="income",
+      valor=amount,
+      categoria="Retirada de Caixinha",
+      descricao=desc or f"Resgate de {box.name}",
+      data=d,
+      meio_pagamento=None,
+      recorrente=False,
+      logo=None,
+    )
+
+    movement = SavingMovement(
+      box_id=box.id,
+      type="withdraw",
+      amount=amount,
+      date=d,
+      description=desc or "Resgate da caixinha",
+      transaction_id=None,
+    )
+
+    try:
+        db.session.add(tx)
+        db.session.flush()
+        movement.transaction_id = tx.id
+        db.session.add(movement)
+        db.session.commit()
+
+        db.session.refresh(box)
+
+        return jsonify(
+            {
+                "box": box.to_dict(include_movements=True),
+                "transaction": tx.to_dict(),
+            }
+        ), 201
+    except Exception as e:
+        db.session.rollback()
+        print(f"[ERRO] withdraw_from_saving_box: {e}")
+        return jsonify({"error": "Erro ao registrar resgate da caixinha."}), 500

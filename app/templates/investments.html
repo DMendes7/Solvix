@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='img/icon-solvix.png') }}" type="image/png">
+    <title>Solvix - Caixinhas</title>
+    <meta name="description" content="Organize suas caixinhas e metas de investimento com o Solvix">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
+    <!-- Estilos específicos da tela de caixinhas -->
+    <style>
+        .header-nav {
+            display: flex;
+            gap: 0.75rem;
+            margin-left: 2rem;
+        }
+
+        .header-nav-link {
+            font-size: 0.85rem;
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            color: hsl(var(--muted-foreground));
+            text-decoration: none;
+            background: transparent;
+            transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+        }
+
+        .header-nav-link:hover {
+            border-color: hsl(var(--border));
+            background: hsl(var(--muted));
+            color: hsl(var(--foreground));
+        }
+
+        .header-nav-link.active {
+            border-color: hsl(var(--primary));
+            background: hsla(var(--primary), 0.12);
+            color: hsl(var(--primary));
+        }
+
+        .saving-boxes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .investment-item {
+            cursor: pointer;
+            border-radius: 0.9rem;
+            border: 1px solid transparent;
+            transition: transform 0.12s ease, box-shadow 0.12s ease,
+                        border-color 0.12s ease, background 0.12s ease;
+        }
+
+        .investment-item:hover {
+            transform: translateY(-1px);
+            border-color: hsl(var(--primary));
+            background: radial-gradient(circle at top left,
+                        hsla(var(--primary), 0.18),
+                        hsla(var(--background), 1));
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+        }
+
+        .investment-item.is-active {
+            border-color: hsl(var(--primary));
+            background: hsla(var(--primary), 0.08);
+        }
+
+        .investment-summary-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .investment-main-balance {
+            font-size: 1.7rem;
+            font-weight: 600;
+        }
+
+        .investment-tagline {
+            font-size: 0.8rem;
+            color: hsl(var(--muted-foreground));
+            margin-top: 0.25rem;
+        }
+
+        .investment-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .investment-chip {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.7rem;
+            border-radius: 999px;
+            background: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+        }
+
+        .investment-chip strong {
+            color: hsl(var(--foreground));
+        }
+
+        .investment-progress-wrapper {
+            margin-top: 0.5rem;
+        }
+
+        .investment-progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: hsl(var(--muted-foreground));
+            margin-bottom: 0.25rem;
+        }
+
+        .investment-progress-bar {
+            position: relative;
+            width: 100%;
+            height: 0.5rem;
+            border-radius: 999px;
+            background: hsl(var(--muted));
+            overflow: hidden;
+        }
+
+        .investment-progress-bar::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            width: var(--progress, 0%);
+            background: linear-gradient(
+                90deg,
+                hsl(var(--primary)),
+                hsl(var(--primary))
+            );
+            box-shadow: 0 0 12px hsla(var(--primary), 0.7);
+            transition: width 0.2s ease-out;
+        }
+
+        .investment-actions {
+            margin-top: 1.5rem;
+            border-top: 1px solid hsl(var(--border));
+            padding-top: 1rem;
+        }
+
+        .investment-actions-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .investment-actions-buttons .btn-toggle-action {
+            flex: 1 1 140px;
+            font-size: 0.85rem;
+            padding: 0.5rem 0.9rem;
+            border-radius: 999px;
+            border: 1px solid hsl(var(--border));
+            background: hsl(var(--muted));
+            color: hsl(var(--foreground));
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+        }
+
+        .investment-actions-buttons .btn-toggle-action:hover {
+            transform: translateY(-1px);
+            border-color: hsl(var(--primary));
+        }
+
+        .investment-actions-buttons .btn-toggle-action.is-active {
+            background: hsla(var(--primary), 0.18);
+            border-color: hsl(var(--primary));
+            color: hsl(var(--primary));
+        }
+
+        .investment-action-form {
+            border-radius: 0.9rem;
+            background: hsl(var(--muted));
+            padding: 0.75rem 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .investment-action-form .form-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .investment-action-form .form-row > div {
+            flex: 1 1 120px;
+        }
+
+        .investment-action-form label {
+            font-size: 0.75rem;
+            color: hsl(var(--muted-foreground));
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+
+        .investment-action-form input {
+            width: 100%;
+        }
+
+        .investment-movements-title {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: hsl(var(--muted-foreground));
+        }
+
+        .investment-movements-list {
+            margin-top: 0.5rem;
+            max-height: 280px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <img src="{{ url_for('static', filename='img/icon-solvix.png') }}" alt="Logo Solvix">
+                    </div>
+                    <div>
+                        <h1>SOLVIX</h1>
+                        <p class="subtitle">Caixinhas & Metas</p>
+                    </div>
+                </div>
+
+                <!-- Navegação principal -->
+                <nav class="header-nav">
+                    <!-- aqui eu mantive o endpoint que você colocou;
+                         se no dashboard o endpoint for 'routes.index', é só trocar -->
+                    <a href="{{ url_for('routes.dashboard') }}" class="header-nav-link">
+                        Visão geral
+                    </a>
+                    <!-- AQUI É O AJUSTE IMPORTANTE: investimentos (pt) -->
+                    <a href="{{ url_for('routes.investimentos') }}" class="header-nav-link active">
+                        Caixinhas
+                    </a>
+                </nav>
+
+                <!-- Bloco usuário / sair -->
+                <div class="header-user" style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
+                    <div class="header-user-text" style="text-align: right;">
+                        <span style="display:block; font-size: 0.75rem; color: hsl(var(--muted-foreground));">
+                            Bem-vindo(a),
+                        </span>
+                        <span style="display:block; font-size: 0.95rem; font-weight: 600;">
+                            {{ name or username }}
+                        </span>
+                    </div>
+                    <a
+                        href="{{ url_for('routes.logout') }}"
+                        class="header-logout-btn"
+                        style="
+                            padding: 0.45rem 1rem;
+                            border-radius: 999px;
+                            border: 1px solid hsl(var(--border));
+                            background: hsl(var(--background));
+                            color: hsl(var(--foreground));
+                            font-size: 0.8rem;
+                            font-weight: 500;
+                            text-decoration: none;
+                            white-space: nowrap;
+                        "
+                    >
+                        Sair
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        <div class="main-grid">
+            <!-- COLUNA ESQUERDA: criar caixinha + lista -->
+            <div class="left-column">
+                <!-- Criar nova caixinha -->
+                <div class="card">
+                    <h2 class="card-title">Criar nova caixinha</h2>
+
+                    <!-- IMPORTANTE: id = investmentForm -->
+                    <form id="investmentForm">
+                        <div class="form-group">
+                            <label for="investmentNameInput">Nome da caixinha</label>
+                            <input
+                                id="investmentNameInput"
+                                type="text"
+                                placeholder="Ex: Casa, Reserva de emergência"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="investmentGoalInput">Meta (R$) - opcional</label>
+                            <input
+                                id="investmentGoalInput"
+                                type="number"
+                                step="0.01"
+                                inputmode="decimal"
+                                placeholder="Ex: 10000"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="investmentDescriptionInput">Descrição - opcional</label>
+                            <input
+                                id="investmentDescriptionInput"
+                                type="text"
+                                placeholder="Ex: Guardar para entrada do apartamento"
+                            >
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            Criar Caixinha
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Lista de caixinhas -->
+                <div class="card">
+                    <h2 class="card-title">Minhas Caixinhas</h2>
+
+                    <!-- IMPORTANTE: id = investmentsList -->
+                    <div id="investmentsList" class="saving-boxes-list">
+                        <div class="empty-state">
+                            Nenhuma caixinha criada ainda. Crie uma ao lado para começar a guardar!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- COLUNA DIREITA: detalhes da caixinha selecionada -->
+            <div class="right-column">
+                <div class="card">
+                    <h2 class="card-title">Detalhes da Caixinha</h2>
+
+                    <!-- Estado vazio -->
+                    <div id="investmentEmptyState" class="saving-box-empty">
+                        Selecione uma caixinha na lista ao lado para ver detalhes,
+                        adicionar aportes ou fazer resgates.
+                    </div>
+
+                    <!-- Detalhes (inicialmente escondido) -->
+                    <div id="investmentDetails" class="saving-box-details" style="display:none;">
+                        <div class="investment-summary-header">
+                            <div>
+                                <h3 id="investmentTitle">Caixinha</h3>
+                                <p id="investmentSubtitle" class="investment-tagline">
+                                    Meta: – • Progresso: 0%
+                                </p>
+                            </div>
+                            <div>
+                                <div class="investment-main-balance" id="investmentBalance">
+                                    R$ 0,00
+                                </div>
+                                <p class="investment-tagline">
+                                    Saldo atual
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="investment-chips">
+                            <span class="investment-chip">
+                                Total aportado:
+                                <strong id="investmentTotalIn">R$ 0,00</strong>
+                            </span>
+                            <span class="investment-chip">
+                                Total resgatado:
+                                <strong id="investmentTotalOut">R$ 0,00</strong>
+                            </span>
+                        </div>
+
+                        <div class="investment-progress-wrapper">
+                            <div class="investment-progress-label">
+                                <span>Progresso da meta</span>
+                                <span id="investmentProgressText">0%</span>
+                            </div>
+                            <div id="investmentProgressBar" class="investment-progress-bar"></div>
+                        </div>
+
+                        <div class="investment-actions">
+                            <div class="investment-actions-buttons">
+                                <button type="button" id="showAddForm" class="btn-toggle-action is-active">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Adicionar aporte
+                                </button>
+                                <button type="button" id="showWithdrawForm" class="btn-toggle-action">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                         viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="6 9 12 15 18 9"></polyline>
+                                    </svg>
+                                    Resgatar
+                                </button>
+                            </div>
+
+                            <!-- Form de Aporte -->
+                            <div id="investmentAddWrapper" class="investment-action-form">
+                                <form id="investmentAddForm">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="investmentAddAmount">Valor do aporte</label>
+                                            <input
+                                                id="investmentAddAmount"
+                                                type="number"
+                                                step="0.01"
+                                                inputmode="numeric"
+                                                placeholder="Ex: 200"
+                                                required
+                                            >
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="investmentAddDate">Data</label>
+                                            <input
+                                                id="investmentAddDate"
+                                                type="date"
+                                                required
+                                            >
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="investmentAddDescription">Descrição - opcional</label>
+                                        <input
+                                            id="investmentAddDescription"
+                                            type="text"
+                                            placeholder="Ex: Aporte mensal"
+                                        >
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary">
+                                        Registrar aporte
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Form de Resgate (inicialmente escondido) -->
+                            <div id="investmentWithdrawWrapper" class="investment-action-form" style="display:none;">
+                                <form id="investmentWithdrawForm">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label for="investmentWithdrawAmount">Valor do resgate</label>
+                                            <input
+                                                id="investmentWithdrawAmount"
+                                                type="number"
+                                                step="0.01"
+                                                inputmode="numeric"
+                                                placeholder="Ex: 150"
+                                                required
+                                            >
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="investmentWithdrawDate">Data</label>
+                                            <input
+                                                id="investmentWithdrawDate"
+                                                type="date"
+                                                required
+                                            >
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="investmentWithdrawDescription">Descrição - opcional</label>
+                                        <input
+                                            id="investmentWithdrawDescription"
+                                            type="text"
+                                            placeholder="Ex: Ajuste de gastos"
+                                        >
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary">
+                                        Registrar resgate
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="investment-movements-title">
+                            Movimentos da caixinha
+                        </div>
+                        <div id="investmentTransactionsList" class="investment-movements-list">
+                            <!-- preenchido via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

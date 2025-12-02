@@ -23,7 +23,48 @@
                     </div>
                 </div>
 
-                <!-- BLOCO NOVO: usuário + sair -->
+                <!-- NAV PRINCIPAL -->
+                <nav class="header-nav" style="margin-left: 2rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <!-- Aba atual: Dashboard -->
+                    <a
+                        href="{{ url_for('routes.dashboard') }}"
+                        class="header-nav-link"
+                        style="
+                            padding: 0.45rem 1rem;
+                            border-radius: 999px;
+                            border: 1px solid hsl(var(--primary));
+                            background: hsl(var(--primary));
+                            color: white;
+                            font-size: 0.8rem;
+                            font-weight: 600;
+                            text-decoration: none;
+                            white-space: nowrap;
+                        "
+                    >
+                        Visão Geral
+                    </a>
+
+                    <!-- Aba de Investimentos / Caixinhas -->
+                    <a
+                        href="{{ url_for('routes.investimentos') }}"
+                        class="header-nav-link"
+                        style="
+                            padding: 0.45rem 1rem;
+                            border-radius: 999px;
+                            border: 1px solid hsl(var(--border));
+                            background: hsl(var(--background));
+                            color: hsl(var(--foreground));
+                            font-size: 0.8rem;
+                            font-weight: 500;
+                            text-decoration: none;
+                            white-space: nowrap;
+                        "
+                    >
+                        Investimentos
+                    </a>
+                </nav>
+
+                <!-- BLOCO: usuário + sair -->
                 <div class="header-user" style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
                     <div class="header-user-text" style="text-align: right;">
                         <span style="display:block; font-size: 0.75rem; color: hsl(var(--muted-foreground));">
@@ -51,7 +92,7 @@
                         Sair
                     </a>
                 </div>
-                <!-- FIM BLOCO NOVO -->
+                <!-- FIM BLOCO -->
             </div>
         </div>
     </header>
