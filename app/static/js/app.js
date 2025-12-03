@@ -4,7 +4,6 @@ const INCOME_CATEGORIES = [
   "Freelance",
   "Investimentos",
   "Presente",
-  "Retirada de Reserva",
   "Outros",
 ];
 
