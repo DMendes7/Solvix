@@ -31,6 +31,8 @@ const SUBSCRIPTION_LOGOS = {
     "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",
   "Microsoft":
     "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg",
+    "Cursor":
+    "https://commons.wikimedia.org/wiki/File:Cursorr-logo.svg",
   "Spotify":
     "https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg",
   "YouTube Premium":
