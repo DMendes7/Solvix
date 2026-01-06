@@ -32,7 +32,7 @@ const SUBSCRIPTION_LOGOS = {
   "Microsoft":
     "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg",
     "Cursor":
-    "https://commons.wikimedia.org/wiki/File:Cursorr-logo.svg",
+    "https://upload.wikimedia.org/wikipedia/commons/9/9a/Cursor-design1-arrow-steep.svg",
   "Spotify":
     "https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg",
   "YouTube Premium":
